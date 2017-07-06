@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,20 @@ namespace Shortcutty
 {
    public partial class Form1 : Form
    {
+      string filter = "";
+
+      public string Filter
+      {
+         get
+         {
+            return this.filter;
+         }
+         set
+         {
+            this.filter = value;
+            this.Line = 0;
+         }
+      }
       DirectoryInfo root;
       DirectoryInfo current;
 
@@ -45,26 +60,37 @@ namespace Shortcutty
 
       public Form1()
       {
-         this.root = new DirectoryInfo(@"C:\Users\soh\Desktop\SHORTCUTTY");
-         this.current = this.root;
+         this.Reset();
 
          InitializeComponent();
+      }
+
+      public void Reset()
+      {
+         this.root = new DirectoryInfo(@"C:\Users\soh\Desktop\SHORTCUTTY");
+         this.current = this.root;
+         this.Filter = "";
+         this.Invalidate();
+      }
+
+      protected override void OnMouseWheel(MouseEventArgs e)
+      {
+         base.OnMouseWheel(e);
+         MoveLine(e.Delta > 0 ? -1 : 1);
+
       }
       Font f = new Font("Consolas", 16, FontStyle.Regular, GraphicsUnit.Pixel);
       void PaintLine(string s, Graphics g, int lineNum)
       {
-         if (lineNum == 0)
-         {
-            s = "..";
-         }
+         var offset = 1;
          if (line == lineNum)
          {
-            g.FillRectangle(Brushes.White, 0, lineNum * f.Height, g.ClipBounds.Width, f.Height);
-            g.DrawString(s, this.f, Brushes.Black, 0, lineNum * f.Height);
+            g.FillRectangle(Brushes.White, 0, (lineNum + offset) * f.Height, g.ClipBounds.Width, f.Height);
+            g.DrawString(s, this.f, Brushes.Black, 0, (lineNum + offset) * f.Height);
          }
          else
          {
-            g.DrawString(s, this.f, Brushes.White, 0, lineNum * f.Height);
+            g.DrawString(s, this.f, Brushes.White, 0, (lineNum+offset) * f.Height);
          }
       }
 
@@ -72,13 +98,10 @@ namespace Shortcutty
       {
          get
          {
-            var dirs = this.Current.EnumerateDirectories() as IEnumerable<FileSystemInfo>;
             var files = this.Current.EnumerateFiles() as IEnumerable<FileSystemInfo>;
             var list = new List<FileSystemInfo>();
 
-            list.Add(this.current.Parent);
-            list.AddRange(dirs);
-            list.AddRange(files);
+            list.AddRange(files.Where((f)=>f.Name.ToUpper().Contains(filter.ToUpper())));
             return list;
          }
       }
@@ -90,16 +113,26 @@ namespace Shortcutty
          g.Clear(Color.Black);
          int i = 0;
          var system = FileSystem;
-      
+
+    
+
          foreach (var dir in system)
          {
             this.PaintLine(dir.Name, g, i++);
          }
 
+
+         g.DrawString(this.Filter, this.f, Brushes.DarkGray, 0, 0 * f.Height);
+
       }
 
       private void Form1_KeyPress(object sender, KeyPressEventArgs e)
       {
+         if (Char.IsLetterOrDigit(e.KeyChar) || e.KeyChar == ' ')
+         {
+            this.Filter += e.KeyChar;
+            this.Filter = this.Filter.TrimStart();
+         }
       }
 
       private void MoveLine(int dir)
@@ -124,11 +157,16 @@ namespace Shortcutty
             {
                var dir = selected as DirectoryInfo;
                this.Current = dir;
+               this.line = 0;
+            }
+            else if (selected is FileInfo)
+            {
+               Process.Start(selected.FullName);
             }
          }
          catch(Exception)
          {
-
+            
          }
       }
 
@@ -147,14 +185,41 @@ namespace Shortcutty
             case Keys.Up:
                MoveLine(-1);
                break;
-            case Keys.Space:
+            case Keys.Return:
                this.OK();
                break;
-            case Keys.Tab:
-               this.Back();
+            case Keys.Back:
+               if (this.Filter.Length > 0)
+                  this.Filter = this.Filter.Substring(0, this.Filter.Length - 1);
+               break;
+            case Keys.Oem6:
+            case Keys.Oemtilde:
+               this.Reset();
                break;
          }
 
+      }
+
+      protected override void OnVisibleChanged(EventArgs e)
+      {
+         if (this.Visible)
+         {
+            this.Focus();
+            this.BringToFront();
+            this.Cursor = new Cursor(Cursor.Current.Handle);
+            Cursor.Clip = new Rectangle(this.Location, this.Size);
+            Cursor.Hide();
+         }
+      }
+
+      private void Form1_Deactivate(object sender, EventArgs e)
+      {
+         this.Hide();
+      }
+
+      private void Form1_MouseClick(object sender, MouseEventArgs e)
+      {
+         this.OK();
       }
    }
 }
