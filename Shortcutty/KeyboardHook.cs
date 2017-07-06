@@ -10,7 +10,7 @@ public class KeyboardHook : IDisposable
    public event LocalKeyEventHandler KeyDown;
    public event LocalKeyEventHandler KeyUp;
 
-   public delegate int CallbackDelegate(int Code, int W, int L);
+   public delegate int CallbackDelegate(int Code, int W, IntPtr L);
 
    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
    public struct KBDLLHookStruct
@@ -23,16 +23,16 @@ public class KeyboardHook : IDisposable
    }
 
    [DllImport("user32", CallingConvention = CallingConvention.StdCall)]
-   private static extern int SetWindowsHookEx(HookType idHook, CallbackDelegate lpfn, int hInstance, int threadId);
+   private static extern int SetWindowsHookEx(HookType idHook, CallbackDelegate lpfn, int hInstance, IntPtr threadId);
 
    [DllImport("user32", CallingConvention = CallingConvention.StdCall)]
    private static extern bool UnhookWindowsHookEx(int idHook);
 
    [DllImport("user32", CallingConvention = CallingConvention.StdCall)]
-   private static extern int CallNextHookEx(int idHook, int nCode, int wParam, int lParam);
+   private static extern int CallNextHookEx(int idHook, int nCode, int wParam, IntPtr lParam);
 
    [DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall)]
-   private static extern int GetCurrentThreadId();
+   private static extern IntPtr GetCurrentThreadId();
 
    public enum HookType : int
    {
@@ -65,7 +65,7 @@ public class KeyboardHook : IDisposable
       {
          HookID = SetWindowsHookEx(HookType.WH_KEYBOARD_LL, TheHookCB,
              0, //0 for local hook. eller hwnd til user32 for global
-             0); //0 for global hook. eller thread for hooken
+             new IntPtr(0)); //0 for global hook. eller thread for hooken
       }
       else
       {
@@ -94,7 +94,7 @@ public class KeyboardHook : IDisposable
    }
 
    //The listener that will trigger events
-   private int KeybHookProc(int Code, int W, int L)
+   private int KeybHookProc(int Code, int W, IntPtr L)
    {
       KBDLLHookStruct LS = new KBDLLHookStruct();
       if (Code < 0)
@@ -109,7 +109,7 @@ public class KeyboardHook : IDisposable
             {
                IntPtr ptr = IntPtr.Zero;
 
-               int keydownup = L >> 30;
+               long keydownup = (long)L >> 30;
                if (keydownup == 0)
                {
                   if (KeyDown != null) KeyDown((Keys)W, GetShiftPressed(), GetCtrlPressed(), GetAltPressed());
