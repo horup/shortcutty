@@ -101,7 +101,31 @@ namespace Shortcutty
             var files = this.Current.EnumerateFiles() as IEnumerable<FileSystemInfo>;
             var list = new List<FileSystemInfo>();
 
-            list.AddRange(files.Where((f)=>f.Name.ToUpper().Contains(filter.ToUpper())));
+            if (filter.Length == 0)
+            {
+               list = files.ToList();
+            }
+            else
+            {
+               foreach (var f in files)
+               {
+                  var found = f.Name.Length >= filter.Length && f.Name.ToUpper().Substring(0, filter.Length) == filter.ToUpper();
+                  if (found)
+                  {
+                     list.Add(f);
+                  }
+               }
+
+               foreach (var f in files)
+               {
+                  var found = !list.Any((ff)=>ff.Name == f.Name) && f.Name.ToUpper().Contains(filter.ToUpper());
+                  if (found)
+                  {
+                     list.Add(f);
+                  }
+               }
+            }
+            //list.AddRange(files.Where((f)=>f.Name.ToUpper().Contains(filter.ToUpper())));
             return list;
          }
       }
@@ -210,6 +234,12 @@ namespace Shortcutty
             Cursor.Clip = new Rectangle(this.Location, this.Size);
             Cursor.Hide();
          }
+      }
+
+      protected override void OnMouseLeave(EventArgs e)
+      {
+         base.OnMouseLeave(e);
+         this.Hide();
       }
 
       private void Form1_Deactivate(object sender, EventArgs e)
