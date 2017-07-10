@@ -228,8 +228,7 @@ namespace Shortcutty
       {
          if (this.Visible)
          {
-            this.Focus();
-            this.BringToFront();
+            this.Activate();
             this.Cursor = new Cursor(Cursor.Current.Handle);
             Cursor.Clip = new Rectangle(this.Location, this.Size);
             Cursor.Hide();
