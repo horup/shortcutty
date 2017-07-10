@@ -14,6 +14,7 @@ namespace Shortcutty
 {
    public partial class Form1 : Form
    {
+      private int blinks = 0;
       string filter = "";
 
       public string Filter
@@ -25,6 +26,9 @@ namespace Shortcutty
          set
          {
             this.filter = value;
+            this.blinks = 0;
+            this.blinker.Stop();
+            this.blinker.Start();
             this.Line = 0;
          }
       }
@@ -60,9 +64,8 @@ namespace Shortcutty
 
       public Form1()
       {
-         this.Reset();
-
          InitializeComponent();
+         this.Reset();
       }
 
       public void Reset()
@@ -130,6 +133,20 @@ namespace Shortcutty
          }
       }
 
+      protected override void OnFormClosing(FormClosingEventArgs e)
+      {
+         this.Cursor = Cursors.Default;
+         Cursor.Show();
+         if (MessageBox.Show("Are you sure?", "Close", MessageBoxButtons.YesNo) == DialogResult.No)
+         {
+            e.Cancel = true;
+            this.Show();
+            this.Activate();
+         }
+
+         base.OnFormClosing(e);
+      }
+
       protected override void OnPaint(PaintEventArgs e)
       {
          base.OnPaint(e);
@@ -138,16 +155,19 @@ namespace Shortcutty
          int i = 0;
          var system = FileSystem;
 
-    
 
          foreach (var dir in system)
          {
             this.PaintLine(dir.Name, g, i++);
          }
 
-
+         var dim = g.MeasureString(this.Filter, this.f);
          g.DrawString(this.Filter, this.f, Brushes.DarkGray, 0, 0 * f.Height);
 
+         if (this.blinks % 2 == 0)
+         {
+            g.FillRectangle(Brushes.DarkGray, dim.Width, 0, 2, this.f.Height);
+         }
       }
 
       private void Form1_KeyPress(object sender, KeyPressEventArgs e)
@@ -249,6 +269,12 @@ namespace Shortcutty
       private void Form1_MouseClick(object sender, MouseEventArgs e)
       {
          this.OK();
+      }
+
+      private void blinker_Tick(object sender, EventArgs e)
+      {
+         this.Invalidate();
+         this.blinks++;
       }
    }
 }

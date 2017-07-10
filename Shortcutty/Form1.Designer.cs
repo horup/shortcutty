@@ -28,7 +28,15 @@
       /// </summary>
       private void InitializeComponent()
       {
+         this.components = new System.ComponentModel.Container();
+         this.blinker = new System.Windows.Forms.Timer(this.components);
          this.SuspendLayout();
+         // 
+         // blinker
+         // 
+         this.blinker.Enabled = true;
+         this.blinker.Interval = 1000;
+         this.blinker.Tick += new System.EventHandler(this.blinker_Tick);
          // 
          // Form1
          // 
@@ -53,6 +61,8 @@
       }
 
       #endregion
+
+      private System.Windows.Forms.Timer blinker;
    }
 }
 
