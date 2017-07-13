@@ -6,7 +6,9 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -55,7 +57,7 @@ namespace Shortcutty
          {
             return this.line;
          }
-         set   
+         set
          {
             this.line = value;
             this.Invalidate();
@@ -93,7 +95,7 @@ namespace Shortcutty
          }
          else
          {
-            g.DrawString(s, this.f, Brushes.White, 0, (lineNum+offset) * f.Height);
+            g.DrawString(s, this.f, Brushes.White, 0, (lineNum + offset) * f.Height);
          }
       }
 
@@ -121,7 +123,7 @@ namespace Shortcutty
 
                foreach (var f in files)
                {
-                  var found = !list.Any((ff)=>ff.Name == f.Name) && f.Name.ToUpper().Contains(filter.ToUpper());
+                  var found = !list.Any((ff) => ff.Name == f.Name) && f.Name.ToUpper().Contains(filter.ToUpper());
                   if (found)
                   {
                      list.Add(f);
@@ -192,6 +194,11 @@ namespace Shortcutty
          this.Invalidate();
       }
 
+      private void DoneOK()
+      {
+         this.Enabled = true;
+      }
+
       private void OK()
       {
          try
@@ -205,12 +212,19 @@ namespace Shortcutty
             }
             else if (selected is FileInfo)
             {
-               Process.Start(selected.FullName);
+               Task t = new Task(new Action(() =>
+               {
+                  Process.Start(selected.FullName);
+                  this.BeginInvoke(new Action(() => this.DoneOK()));
+               }));
+
+               t.Start();
+               this.Hide();
             }
          }
-         catch(Exception)
+         catch (Exception)
          {
-            
+
          }
       }
 
@@ -248,7 +262,23 @@ namespace Shortcutty
       {
          if (this.Visible)
          {
+            uint foreThread = Win32.GetWindowThreadProcessId(Win32.GetForegroundWindow(), IntPtr.Zero);
+            uint appThread = Win32.GetCurrentThreadId();
+            const uint SW_SHOW = 5;
+            if (foreThread != appThread)
+            {
+               Win32.AttachThreadInput(foreThread, appThread, true);
+               Win32.BringWindowToTop(this.Handle);
+               Win32.ShowWindow(this.Handle, SW_SHOW);
+               Win32.AttachThreadInput(foreThread, appThread, false);
+            }
+            else
+            {
+               Win32.BringWindowToTop(this.Handle);
+               Win32.ShowWindow(this.Handle, SW_SHOW);
+            }
             this.Activate();
+
             this.Cursor = new Cursor(Cursor.Current.Handle);
             Cursor.Clip = new Rectangle(this.Location, this.Size);
             Cursor.Hide();
@@ -276,5 +306,33 @@ namespace Shortcutty
          this.Invalidate();
          this.blinks++;
       }
+   }
+   public static class Win32
+   {
+      [DllImport("user32.dll", SetLastError = true)]
+      static public extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+      // When you don't want the ProcessId, use this overload and pass IntPtr.Zero for the second parameter
+      [DllImport("user32.dll")]
+      static public extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+
+      [DllImport("kernel32.dll")]
+      static public extern uint GetCurrentThreadId();
+
+      /// <summary>The GetForegroundWindow function returns a handle to the foreground window.</summary>
+      [DllImport("user32.dll")]
+      public static extern IntPtr GetForegroundWindow();
+
+      [DllImport("user32.dll")]
+      static public extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+      [DllImport("user32.dll", SetLastError = true)]
+      static public extern bool BringWindowToTop(IntPtr hWnd);
+
+      [DllImport("user32.dll", SetLastError = true)]
+      static public extern bool BringWindowToTop(HandleRef hWnd);
+
+      [DllImport("user32.dll")]
+      static public extern bool ShowWindow(IntPtr hWnd, uint nCmdShow);
    }
 }
