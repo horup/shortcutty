@@ -20,7 +20,7 @@ namespace Shortcutty
       private string filter = "";
       private DirectoryInfo root;
       private DirectoryInfo current;
-      private Font f = new Font("Consolas", 16, FontStyle.Regular, GraphicsUnit.Pixel);
+      private Font f = new Font("Consolas", 24, FontStyle.Regular, GraphicsUnit.Pixel);
       private int line = 0;
 
       public Form1()
@@ -78,18 +78,23 @@ namespace Shortcutty
          }
       }
 
-      private void PaintLine(string s, Graphics g, int lineNum)
+      private void PaintLine(string s, Graphics g, int lineNum, Icon icon)
       {
          var offset = 1;
+         var brush = Brushes.White;
          if (line == lineNum)
          {
             g.FillRectangle(Brushes.White, 0, (lineNum + offset) * f.Height, g.ClipBounds.Width, f.Height);
-            g.DrawString(s, this.f, Brushes.Black, 0, (lineNum + offset) * f.Height);
+            brush = Brushes.Black;
          }
-         else
+
+         if (icon != null)
          {
-            g.DrawString(s, this.f, Brushes.White, 0, (lineNum + offset) * f.Height);
+            g.DrawIcon(icon, new Rectangle(0, (lineNum + offset) * f.Height, f.Height, f.Height));
          }
+
+         g.DrawString(s, this.f, brush, f.Height, (lineNum + offset) * f.Height);
+
       }
 
       private List<FileSystemInfo> FileSystem
@@ -228,6 +233,18 @@ namespace Shortcutty
          this.OK();
       }
 
+      private Dictionary<string, Icon> icons = new Dictionary<string, Icon>();
+
+      private Icon GetIcon(string path)
+      {
+         if (!icons.ContainsKey(path))
+         {
+            icons[path] = System.Drawing.Icon.ExtractAssociatedIcon(path);
+         }
+
+         return icons[path];
+      }
+
       protected override void OnPaint(PaintEventArgs e)
       {
          base.OnPaint(e);
@@ -239,15 +256,16 @@ namespace Shortcutty
 
          foreach (var dir in system)
          {
-            this.PaintLine(dir.Name, g, i++);
+            Icon icon = GetIcon(dir.FullName);
+            this.PaintLine(Path.GetFileNameWithoutExtension(dir.FullName).ToUpper(), g, i++, icon);
          }
 
          var dim = g.MeasureString(this.Filter, this.f);
-         g.DrawString(this.Filter, this.f, Brushes.DarkGray, 0, 0 * f.Height);
-
+         g.DrawString(this.Filter.ToUpper(), this.f, Brushes.DarkGray, this.f.Height, 0 * f.Height);
+         g.DrawString(">>", this.f, Brushes.DarkGray, -3, 0);
          if (this.blinks % 2 == 0)
          {
-            g.FillRectangle(Brushes.DarkGray, dim.Width, 0, 2, this.f.Height);
+            g.FillRectangle(Brushes.DarkGray, dim.Width + this.f.Height, 0, 2, this.f.Height);
          }
       }
 
@@ -293,8 +311,8 @@ namespace Shortcutty
             this.Activate();
 
             this.Cursor = new Cursor(Cursor.Current.Handle);
-            Cursor.Clip = new Rectangle(this.Location, this.Size);
-            Cursor.Hide();
+            Cursor.Position = new Point(this.Left + this.Width / 2, this.Top + this.Height / 2);
+            Cursor = Cursors.Cross;
          }
       }
 
