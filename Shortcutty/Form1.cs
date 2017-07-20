@@ -17,9 +17,26 @@ namespace Shortcutty
    public partial class Form1 : Form
    {
       private int blinks = 0;
-      string filter = "";
+      private string filter = "";
+      private DirectoryInfo root;
+      private DirectoryInfo current;
+      private Font f = new Font("Consolas", 16, FontStyle.Regular, GraphicsUnit.Pixel);
+      private int line = 0;
 
-      public string Filter
+      public Form1()
+      {
+         InitializeComponent();
+         this.Reset();
+      }
+      public void Reset()
+      {
+         this.root = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\SHORTCUTTY");
+         this.current = this.root;
+         this.Filter = "";
+         this.Invalidate();
+      }
+
+      private string Filter
       {
          get
          {
@@ -34,10 +51,8 @@ namespace Shortcutty
             this.Line = 0;
          }
       }
-      DirectoryInfo root;
-      DirectoryInfo current;
 
-      public DirectoryInfo Current
+      private DirectoryInfo Current
       {
          get
          {
@@ -50,8 +65,7 @@ namespace Shortcutty
          }
       }
 
-      int line = 0;
-      public int Line
+      private int Line
       {
          get
          {
@@ -64,28 +78,7 @@ namespace Shortcutty
          }
       }
 
-      public Form1()
-      {
-         InitializeComponent();
-         this.Reset();
-      }
-
-      public void Reset()
-      {
-         this.root = new DirectoryInfo(@"C:\Users\soh\Desktop\SHORTCUTTY");
-         this.current = this.root;
-         this.Filter = "";
-         this.Invalidate();
-      }
-
-      protected override void OnMouseWheel(MouseEventArgs e)
-      {
-         base.OnMouseWheel(e);
-         MoveLine(e.Delta > 0 ? -1 : 1);
-
-      }
-      Font f = new Font("Consolas", 16, FontStyle.Regular, GraphicsUnit.Pixel);
-      void PaintLine(string s, Graphics g, int lineNum)
+      private void PaintLine(string s, Graphics g, int lineNum)
       {
          var offset = 1;
          if (line == lineNum)
@@ -130,54 +123,8 @@ namespace Shortcutty
                   }
                }
             }
-            //list.AddRange(files.Where((f)=>f.Name.ToUpper().Contains(filter.ToUpper())));
+
             return list;
-         }
-      }
-
-      protected override void OnFormClosing(FormClosingEventArgs e)
-      {
-         this.Cursor = Cursors.Default;
-         Cursor.Show();
-         if (MessageBox.Show("Are you sure?", "Close", MessageBoxButtons.YesNo) == DialogResult.No)
-         {
-            e.Cancel = true;
-            this.Show();
-            this.Activate();
-         }
-
-         base.OnFormClosing(e);
-      }
-
-      protected override void OnPaint(PaintEventArgs e)
-      {
-         base.OnPaint(e);
-         var g = e.Graphics;
-         g.Clear(Color.Black);
-         int i = 0;
-         var system = FileSystem;
-
-
-         foreach (var dir in system)
-         {
-            this.PaintLine(dir.Name, g, i++);
-         }
-
-         var dim = g.MeasureString(this.Filter, this.f);
-         g.DrawString(this.Filter, this.f, Brushes.DarkGray, 0, 0 * f.Height);
-
-         if (this.blinks % 2 == 0)
-         {
-            g.FillRectangle(Brushes.DarkGray, dim.Width, 0, 2, this.f.Height);
-         }
-      }
-
-      private void Form1_KeyPress(object sender, KeyPressEventArgs e)
-      {
-         if (Char.IsLetterOrDigit(e.KeyChar) || e.KeyChar == ' ')
-         {
-            this.Filter += e.KeyChar;
-            this.Filter = this.Filter.TrimStart();
          }
       }
 
@@ -228,13 +175,25 @@ namespace Shortcutty
          }
       }
 
-      private void Back()
+      private void blinker_Tick(object sender, EventArgs e)
       {
-
+         this.Invalidate();
+         this.blinks++;
+      }
+     
+      protected override void OnKeyPress(KeyPressEventArgs e)
+      {
+         base.OnKeyPress(e);
+         if (Char.IsLetterOrDigit(e.KeyChar) || e.KeyChar == ' ')
+         {
+            this.Filter += e.KeyChar;
+            this.Filter = this.Filter.TrimStart();
+         }
       }
 
-      private void Form1_KeyDown(object sender, KeyEventArgs e)
+      protected override void OnKeyDown(KeyEventArgs e)
       {
+         base.OnKeyDown(e);
          switch (e.KeyCode)
          {
             case Keys.Down:
@@ -255,7 +214,61 @@ namespace Shortcutty
                this.Reset();
                break;
          }
+      }
 
+      protected override void OnDeactivate(EventArgs e)
+      {
+         base.OnDeactivate(e);
+         this.Hide();
+      }
+
+      protected override void OnMouseClick(MouseEventArgs e)
+      {
+         base.OnMouseClick(e);
+         this.OK();
+      }
+
+      protected override void OnPaint(PaintEventArgs e)
+      {
+         base.OnPaint(e);
+         var g = e.Graphics;
+         g.Clear(Color.Black);
+         int i = 0;
+         var system = FileSystem;
+
+
+         foreach (var dir in system)
+         {
+            this.PaintLine(dir.Name, g, i++);
+         }
+
+         var dim = g.MeasureString(this.Filter, this.f);
+         g.DrawString(this.Filter, this.f, Brushes.DarkGray, 0, 0 * f.Height);
+
+         if (this.blinks % 2 == 0)
+         {
+            g.FillRectangle(Brushes.DarkGray, dim.Width, 0, 2, this.f.Height);
+         }
+      }
+
+      protected override void OnMouseWheel(MouseEventArgs e)
+      {
+         base.OnMouseWheel(e);
+         MoveLine(e.Delta > 0 ? -1 : 1);
+
+      }
+      protected override void OnFormClosing(FormClosingEventArgs e)
+      {
+         this.Cursor = Cursors.Default;
+         Cursor.Show();
+         if (MessageBox.Show("Are you sure?", "Close", MessageBoxButtons.YesNo) == DialogResult.No)
+         {
+            e.Cancel = true;
+            this.Show();
+            this.Activate();
+         }
+
+         base.OnFormClosing(e);
       }
 
       protected override void OnVisibleChanged(EventArgs e)
@@ -290,49 +303,5 @@ namespace Shortcutty
          base.OnMouseLeave(e);
          this.Hide();
       }
-
-      private void Form1_Deactivate(object sender, EventArgs e)
-      {
-         this.Hide();
-      }
-
-      private void Form1_MouseClick(object sender, MouseEventArgs e)
-      {
-         this.OK();
-      }
-
-      private void blinker_Tick(object sender, EventArgs e)
-      {
-         this.Invalidate();
-         this.blinks++;
-      }
-   }
-   public static class Win32
-   {
-      [DllImport("user32.dll", SetLastError = true)]
-      static public extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-      // When you don't want the ProcessId, use this overload and pass IntPtr.Zero for the second parameter
-      [DllImport("user32.dll")]
-      static public extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
-
-      [DllImport("kernel32.dll")]
-      static public extern uint GetCurrentThreadId();
-
-      /// <summary>The GetForegroundWindow function returns a handle to the foreground window.</summary>
-      [DllImport("user32.dll")]
-      public static extern IntPtr GetForegroundWindow();
-
-      [DllImport("user32.dll")]
-      static public extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-      [DllImport("user32.dll", SetLastError = true)]
-      static public extern bool BringWindowToTop(IntPtr hWnd);
-
-      [DllImport("user32.dll", SetLastError = true)]
-      static public extern bool BringWindowToTop(HandleRef hWnd);
-
-      [DllImport("user32.dll")]
-      static public extern bool ShowWindow(IntPtr hWnd, uint nCmdShow);
    }
 }

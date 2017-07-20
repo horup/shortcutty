@@ -96,7 +96,6 @@ public class KeyboardHook : IDisposable
    //The listener that will trigger events
    private int KeybHookProc(int Code, int W, IntPtr L)
    {
-      KBDLLHookStruct LS = new KBDLLHookStruct();
       if (Code < 0)
       {
          return CallNextHookEx(HookID, Code, W, L);
