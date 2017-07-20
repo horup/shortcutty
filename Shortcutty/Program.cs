@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,9 +19,16 @@ namespace Shortcutty
          Application.SetCompatibleTextRenderingDefault(false);
          Application.EnableVisualStyles();
          form = new Form1();
-         var kh = new KeyboardHook(true);
-         kh.KeyDown += Kh_KeyDown;
-         Application.Run(form);
+         if (Directory.Exists(form.RootPath))
+         {
+            var kh = new KeyboardHook(true);
+            kh.KeyDown += Kh_KeyDown;
+            Application.Run(form);
+         }
+         else
+         {
+            MessageBox.Show(form.RootPath + " directory was not found. Please create this directory and place shortcuts before proceeding.");
+         }
       }
 
       private static void Kh_KeyDown(Keys key, bool Shift, bool Ctrl, bool Alt)

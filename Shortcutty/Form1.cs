@@ -26,11 +26,20 @@ namespace Shortcutty
       public Form1()
       {
          InitializeComponent();
-         this.Reset();
+      }
+
+    
+
+      public string RootPath
+      {
+         get
+         {
+            return Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\SHORTCUTTY";
+         }
       }
       public void Reset()
       {
-         this.root = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\SHORTCUTTY");
+         this.root = new DirectoryInfo(this.RootPath);
          this.current = this.root;
          this.Filter = "";
          this.Invalidate();
@@ -195,7 +204,11 @@ namespace Shortcutty
             this.Filter = this.Filter.TrimStart();
          }
       }
-
+      protected override void OnShown(EventArgs e)
+      {
+         base.OnShown(e);
+         this.Reset();
+      }
       protected override void OnKeyDown(KeyEventArgs e)
       {
          base.OnKeyDown(e);
