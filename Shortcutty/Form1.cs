@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IWshRuntimeLibrary;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -252,7 +253,24 @@ namespace Shortcutty
       {
          if (!icons.ContainsKey(path))
          {
-            icons[path] = System.Drawing.Icon.ExtractAssociatedIcon(path);
+            FileInfo fi = new FileInfo(path);
+            if (fi.Extension.ToLower() == ".lnk")
+            {
+               WshShell shell = new WshShell();
+               IWshShortcut link = (IWshShortcut)shell.CreateShortcut(path);
+               if (System.IO.File.Exists(link.TargetPath))
+               {
+                  icons[path] = System.Drawing.Icon.ExtractAssociatedIcon(link.TargetPath);
+               }
+               else
+               {
+                  icons[path] = System.Drawing.Icon.ExtractAssociatedIcon(path);
+               }
+            }
+            else
+            {
+               icons[path] = System.Drawing.Icon.ExtractAssociatedIcon(path);
+            }
          }
 
          return icons[path];
