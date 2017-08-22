@@ -199,7 +199,7 @@ namespace Shortcutty
       protected override void OnKeyPress(KeyPressEventArgs e)
       {
          base.OnKeyPress(e);
-         if (Char.IsLetterOrDigit(e.KeyChar) || e.KeyChar == ' ')
+         if (Char.IsLetterOrDigit(e.KeyChar) || e.KeyChar == '.' || e.KeyChar == ' ' || e.KeyChar == ' ' || e.KeyChar == ',')
          {
             this.Filter += e.KeyChar;
             this.Filter = this.Filter.TrimStart();
