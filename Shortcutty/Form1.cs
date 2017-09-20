@@ -215,6 +215,10 @@ namespace Shortcutty
          base.OnKeyDown(e);
          switch (e.KeyCode)
          {
+            case Keys.Escape:
+               this.Reset();
+               this.Hide();
+               break;
             case Keys.Down:
                MoveLine(1);
                break;
