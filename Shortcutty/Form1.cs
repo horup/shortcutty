@@ -292,11 +292,11 @@ namespace Shortcutty
          foreach (var dir in system)
          {
             Icon icon = GetIcon(dir.FullName);
-            this.PaintLine(Path.GetFileNameWithoutExtension(dir.FullName).ToUpper(), g, i++, icon);
+            this.PaintLine(Path.GetFileNameWithoutExtension(dir.FullName), g, i++, icon);
          }
 
          var dim = g.MeasureString(this.Filter, this.f);
-         g.DrawString(this.Filter.ToUpper(), this.f, Brushes.DarkGray, this.f.Height, 0 * f.Height);
+         g.DrawString(this.Filter, this.f, Brushes.DarkGray, this.f.Height, 0 * f.Height);
          g.DrawString(">>", this.f, Brushes.DarkGray, -3, 0);
          if (this.blinks % 2 == 0)
          {
